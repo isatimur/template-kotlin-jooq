@@ -1,0 +1,129 @@
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: currencies
+
+servicemonitor:
+  enabled: false
+
+rbac:
+  create: false
+
+pv:
+  enabled: false
+
+istio:
+  enabled: false
+  
+secrets:
+  enabled: true
+  REDIS_HOST: ${REDIS_HOST}
+  REDIS_PORT: ${REDIS_PORT}
+  POSTGRES_HOST: ${POSTGRES_HOST}
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+
+
+configs:
+  enabled: false
+
+
+envs: 
+  enabled: false
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+registrySecret:
+  enabled: true
+  name: regcred
+  data: ${DOCKER_CONFIG_JSON}
+
+service:
+  enabled: true
+  name: currencies
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+
+
+ingress:
+  enabled: true
+  rules:
+  - host: "currencies.dev.idynsys.org"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: currencies
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - currencies.dev.idynsys.org
+    secretName: letsencrypt-prod
+
+statefulset:
+  enabled: false
+  name: 
+  image: 
+    repository: ""
+    tag: ""
+    pullPolicy: Always
+  command:
+    enabled: false
+    cli: '["/bin/sh", "-c", ""]'
+    args: '[""]'
+  replicaCount: 1
+  containerPort: 8080
+
+deployment:
+  enabled: true
+  image: 
+    repository: ""
+    tag: ""
+    pullPolicy: Always
+  command:
+    enabled: false
+    cli: '["/bin/sh", "-c", ""]'
+    args: '[""]'
+  podAnnotations: {} 
+  securityContext: {}
+    # runAsUser: 1000
+    # fsGroup: 1000
+  replicaCount: 1
+  containerPort: 8080
+  resources: {}
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+  livenessProbe: {}
+  #  httpGet:
+  #    path: /health
+  #    port: http
+  #  initialDelaySeconds: 300
+  #  periodSeconds: 10
+  readinessProbe: {}
+  #  httpGet:
+  #    path: /health
+  #    port: http
+  #  initialDelaySeconds: 60
+  #  periodSeconds: 10

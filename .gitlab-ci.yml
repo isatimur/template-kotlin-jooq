@@ -1,0 +1,77 @@
+image: gitlab/dind
+services:
+   - name: docker:dind
+     entrypoint: ["env", "-u", "DOCKER_HOST"]
+     command: ["dockerd-entrypoint.sh"]
+
+variables:
+  DOMAIN: champi.lo
+  IMAGE_TAG: $CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA 
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+  - deploy
+
+
+
+.build-images:
+  stage: build
+  script:
+    - echo "-------------------------- $CI_REGISTRY_IMAGE/${IMAGE_TAG} ---------------------"
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - echo $CI_PROJECT_TITLE
+    - docker build -t $CI_REGISTRY_IMAGE:${IMAGE_TAG}  .
+    - docker push $CI_REGISTRY_IMAGE:${IMAGE_TAG}
+
+
+.deploy:
+  stage: deploy
+  variables:
+  image:
+    name: dtzar/helm-kubectl
+  script:
+    - mkdir ~/.kube && echo ${KUBE_CONFIG_DEV} | base64 -d > ~/.kube/config
+    - helm repo add --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASS_2 app https://$CI_REGISTRY_HELM/stable
+    - envsubst < ./k8s/values_${VALUES_PREFIX}.yaml > ./k8s/values.yaml
+    - helm upgrade --install --create-namespace -n ${CI_PROJECT_NAME}-${CI_COMMIT_REF_NAME} ${CI_PROJECT_NAME}-${CI_COMMIT_REF_NAME} app/app -f ./k8s/values.yaml
+      --set deployment.image.repository=${CI_REGISTRY_IMAGE}
+      --set deployment.image.tag=${IMAGE_TAG}
+      --set configs.COMMIT_HASH=$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
+
+      
+build-images:
+  extends: .build-images
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: http://$CI_COMMIT_REF_NAME
+  only: 
+    - main
+    - /^test-.*$/
+  tags:
+    - b2b-docker-runner
+
+deploy-main:
+  extends: .deploy
+  environment:
+    name: develop
+  variables:
+    VALUES_PREFIX: main
+  only: 
+    - main
+  tags:
+    - b2b-docker-runner
+
+deploy-test:
+  extends: .deploy
+  environment:
+    name: test
+  variables:
+    VALUES_PREFIX: test
+  only: 
+    - test
+    - /^test-.*$/ 
+  tags:
+    - b2b-docker-runner
