@@ -1,0 +1,27 @@
+version: '2'
+services:
+
+  postgresql:
+    image: postgres:13.3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    ports:
+      - "5432:5432"
+
+  consul:
+    image: consul:1.14.2
+    command: consul agent -dev -ui -client 0.0.0.0
+    ports:
+      - "8300:8300"
+      - "8500:8500"
+      - "8600:8600"
+
+  consul-config-loader:
+    image: jhipster/consul-config-loader:v0.4.1
+    volumes:
+      - ./consulConfig.local:/config:Z
+    environment:
+      - INIT_SLEEP_SECONDS=5
+      - CONSUL_URL=consul
+      - CONSUL_PORT=8500

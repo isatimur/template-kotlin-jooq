@@ -1,0 +1,6 @@
+spring:
+  rsocket:
+    server:
+      port: 7001
+  liquibase:
+    change-log: "classpath:db/changelog.yaml"

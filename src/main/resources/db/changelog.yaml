@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: currencies
+      author: ids
+      changes:
+        - sqlFile:
+            endDelimiter: \n-
+            splitStatements: true
+            path: db/sql/currencies.sql
+            stripComments: true
+  - changeSet:
+      id: iso_currencies
+      author: ids
+      changes:
+        - sqlFile:
+            endDelimiter: \n-
+            splitStatements: true
+            path: db/sql/iso_currencies.sql
+            stripComments: true
